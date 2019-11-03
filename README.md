@@ -1,5 +1,7 @@
 # run-all
 
+[![Build Status](https://travis-ci.org/headexplodes/run-all.svg?branch=master)](https://travis-ci.org/headexplodes/run-all)
+
 Run multiple commands and interleave their output into a single terminal. Designed for running multiple services locally during development, without any special tooling or multiple terminal tabs.
 
 ## Usage
