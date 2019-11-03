@@ -1,9 +1,19 @@
 language: rust
 rust:
   - stable
-  - beta
-  - nightly
-jobs:
-  allow_failures:
-    - rust: nightly
-  fast_finish: true
+#  - beta
+#  - nightly
+#jobs:
+#  allow_failures:
+#    - rust: nightly
+#  fast_finish: true
+deploy:
+  provider: releases
+  skip_cleanup: true
+#  api_key: $GH_TOKEN
+  file_glob: true
+  file:
+    - "dist/target/run-all"
+  on:
+    tags: true
+  draft: true
