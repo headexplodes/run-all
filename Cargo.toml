@@ -1,0 +1,16 @@
+[package]
+name = "run-all"
+version = "1.0.0-master"
+license = "MIT"
+authors = ["Robert Parsons <headexplodes@gmail.com>"]
+edition = "2018"
+readme = "README.md"
+homepage = "https://github.com/headexplodes/run-all"
+repository = "https://github.com/headexplodes/run-all"
+
+[dependencies]
+ansi_term = "0.12.1"
+
+[[bin]]
+name = "run-all"
+
