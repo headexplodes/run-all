@@ -4,10 +4,12 @@ use std::io::prelude::*;
 use std::process::{Child, Command, exit};
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::thread::JoinHandle;
 
 use ansi_term::Colour;
+use ctrlc;
 
 const ANSI_COLORS: [u8; 12] = [14, 13, 12, 11, 10, 9, 1, 2, 3, 4, 5, 6];
 
@@ -93,58 +95,6 @@ fn parse_options<I: Iterator<Item=String>>(args: I) -> Result<Options, ParseErro
     };
 }
 
-//enum Either<L, R> {
-//    Left(L),
-//    Right(R),
-//}
-//
-//struct OutStream {
-//    inner: Either<Stdout, Stderr>
-//}
-//
-//struct OutStreamLock<'a> {
-//    inner: Either<StdoutLock<'a>, StderrLock<'a>>
-//}
-//
-//impl OutStream {
-//    fn stdout() -> OutStream {
-//        return OutStream { inner: Either::Left(std::io::stdout()) };
-//    }
-//
-//    fn stderr() -> OutStream {
-//        return OutStream { inner: Either::Right(std::io::stderr()) };
-//    }
-//
-//    fn lock(&self) -> OutStreamLock {
-//        match &self.inner {
-//            Either::Left(stdout) =>
-//                OutStreamLock { inner: Either::Left(stdout.lock()) },
-//            Either::Right(stderr) =>
-//                OutStreamLock { inner: Either::Right(stderr.lock()) },
-//        }
-//    }
-//}
-//
-//impl<'a> Write for OutStreamLock<'a> {
-//    fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
-//        match &mut self.inner {
-//            Either::Left(stdout) =>
-//                stdout.write(buf),
-//            Either::Right(stderr) =>
-//                stderr.write(buf)
-//        }
-//    }
-//
-//    fn flush(&mut self) -> Result<(), Error> {
-//        match &mut self.inner {
-//            Either::Left(stdout) =>
-//                stdout.flush(),
-//            Either::Right(stderr) =>
-//                stderr.flush()
-//        }
-//    }
-//}
-
 fn pad_left(src: &str, min: usize) -> String {
     let mut buf = String::with_capacity(std::cmp::max(src.len(), min));
     buf.insert_str(0, src);
@@ -153,15 +103,6 @@ fn pad_left(src: &str, min: usize) -> String {
     }
     return buf;
 }
-
-//fn stream_thread<S: Read>(alias: &str, max_alias: usize, colour: Colour, src: S, dest: OutStream) -> () {
-//    let reader = BufReader::new(src);
-//    for line in reader.lines() {
-//        let mut lock = dest.lock();
-//        let alias = pad_left(&format!("[{}]", alias), max_alias + 2); // include brackets
-//        writeln!(lock, "{}", colour.paint(format!("{} {}", alias, line.unwrap()))).unwrap();
-//    }
-//}
 
 fn stream_thread<S: Read, W: Write>(prefix: &str, colour: Colour, src: S, mut dest: W, mutex: Arc<Mutex<()>>) -> () {
     let reader = BufReader::new(src);
@@ -172,6 +113,20 @@ fn stream_thread<S: Read, W: Write>(prefix: &str, colour: Colour, src: S, mut de
 }
 
 fn main() {
+    let running = Arc::new(AtomicBool::new(false));
+
+    ctrlc::set_handler(move || {
+        // second time Ctrl+C twice (abort)
+        if running.load(Ordering::Relaxed) {
+            std::process::exit(1);
+        }
+
+        // first time Ctrl+C pressed (ignore and wait for children to exit)
+        running.store(true, Ordering::Relaxed);
+    }).unwrap_or_else(|_| {
+        eprintln!("Could not install Ctrl+C handler");
+    });
+
     let mut args = env::args();
 
     let program = args.next();
@@ -267,5 +222,3 @@ fn main() {
 
 // TODO: need to detect when not run within an interactive terminal and disable colours
 // TODO: allow colours to be disabled via command line/environment variable
-
-// TODO: signal handling (send SIGINT to children...), see https://rust-lang-nursery.github.io/cli-wg/in-depth/signals.html

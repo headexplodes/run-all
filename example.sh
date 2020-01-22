@@ -3,7 +3,7 @@
 # Simple testing script, example:
 # cargo run -- -a alpha "./example.sh 3" -a beta "./example.sh 5" -a gamma "./example.sh 7"
 
-# testnig signal handling on children
+# testing signal handling on children
 trap "echo \"Trapped SIGINT, exiting...\"" EXIT
 
 COUNT="$1"

@@ -10,6 +10,7 @@ repository = "https://github.com/headexplodes/run-all"
 
 [dependencies]
 ansi_term = "0.12.1"
+ctrlc = "3.1.3"
 
 [[bin]]
 name = "run-all"
@@ -18,4 +19,3 @@ name = "run-all"
 # trying to create smaller binary
 lto = true
 panic = "abort"
-
